@@ -1,5 +1,5 @@
 import random
-
+# this the guessing game code
 def choose_difficulty():
     print("\nChoose Difficulty:")
     print("1. Easy (1–50, 10 attempts)")
