@@ -1,63 +1,85 @@
 import random
-# this the guessing game code
+import time
+
 def choose_difficulty():
     print("\nChoose Difficulty:")
     print("1. Easy (1–50, 10 attempts)")
     print("2. Medium (1–100, 7 attempts)")
     print("3. Hard (1–200, 5 attempts)")
-    
+    print("4. Advanced (1–500, adaptive rules)")
+
     while True:
-        choice = input("Enter choice (1/2/3): ").strip()
+        choice = input("Enter choice (1/2/3/4): ").strip()
         if choice == "1":
-            return 50, 10
+            return 50, 10, "normal"
         elif choice == "2":
-            return 100, 7
+            return 100, 7, "normal"
         elif choice == "3":
-            return 200, 5
+            return 200, 5, "normal"
+        elif choice == "4":
+            return 500, 8, "advanced"
         else:
             print("Invalid choice. Try again.")
 
 def play_game():
-    max_num, attempts = choose_difficulty()
+    max_num, attempts, mode = choose_difficulty()
     number = random.randint(1, max_num)
+    score = 0
 
-    print(f"\nI have picked a number between 1 and {max_num}.")
+    print(f"\nI picked a number between 1 and {max_num}.")
+
+    if mode == "advanced":
+        start_time = time.time()
+        lower_bound, upper_bound = 1, max_num
+        hints_left = 2
 
     for attempt in range(1, attempts + 1):
         while True:
-            guess_input = input(f"Attempt {attempt}/{attempts}: Enter your guess: ").strip()
-            
+            guess_input = input(f"Attempt {attempt}/{attempts}: Enter guess (or 'hint'): ").strip()
+
+            if mode == "advanced" and guess_input.lower() == "hint":
+                if hints_left > 0:
+                    hints_left -= 1
+                    hint = "even" if number % 2 == 0 else "odd"
+                    print(f"💡 Hint: The number is {hint}. (-10 points)")
+                    score -= 10
+                else:
+                    print("No hints left!")
+                continue
+
             if not guess_input.isdigit():
                 print("Enter a valid number.")
                 continue
-            
+
             guess = int(guess_input)
             break
 
         if guess == number:
-            score = (attempts - attempt + 1) * 10
-            print(f"🎉 Correct! You scored {score} points.")
+            base_score = (attempts - attempt + 1) * 20
+
+            if mode == "advanced":
+                time_taken = int(time.time() - start_time)
+                time_bonus = max(0, 30 - time_taken)
+                score += base_score + time_bonus
+                print(f"🎉 Correct! Time bonus: {time_bonus}")
+            else:
+                score += base_score
+
+            print(f"🏆 You scored {score} points.")
             return score
+
         elif guess < number:
             print("Too low.")
+            if mode == "advanced":
+                lower_bound = max(lower_bound, guess + 1)
         else:
             print("Too high.")
+            if mode == "advanced":
+                upper_bound = min(upper_bound, guess - 1)
+
+        if mode == "advanced":
+            print(f"📊 Range now: {lower_bound} – {upper_bound}")
+            score -= 5  # penalty per wrong guess
 
     print(f"❌ You lost. The number was {number}.")
-    return 0
-
-def main():
-    total_score = 0
-    print("=== Welcome to Number Guessing Game ===")
-
-    while True:
-        total_score += play_game()
-        print(f"\nTotal Score: {total_score}")
-
-        again = input("Play again? (y/n): ").strip().lower()
-        if again != 'y':
-            print("Thanks for playing!")
-            break
-
-if __name__ == "__main__":
-    main()
+    return score
